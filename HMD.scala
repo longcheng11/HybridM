@@ -5,7 +5,7 @@ import scala.io.Source
 /**
   * Created by lcheng on 1/20/2017.
   */
-object HMD_2 {
+object HMD {
 
 
   def genPair(x: Array[String]): IndexedSeq[(String, Int)] = {
