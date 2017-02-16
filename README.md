@@ -34,6 +34,6 @@ Test code for Scalable Discovery of Hybrid Process Models
   
 2, How to set Spark, please refer to http://spark.apache.org/.
 
-3, A prototye that can be integrated in ProM (http://www.promtools.org/) is in the process of development, and real demos with standard inputs (i.e., XES) and outputs are exeptated to be done before May.
+3, A prototye that can be integrated in ProM (http://www.promtools.org/) is in the process of development, and real demos with standard inputs (i.e., XES) and outputs are expected to be done before May.
 
 4, If any questions, please email to l.cheng(AT)tue.nl
