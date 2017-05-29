@@ -7,7 +7,6 @@ import scala.io.Source
   */
 object HMD {
 
-
   def genPair(x: Array[String]): IndexedSeq[(String, Int)] = {
     val A = x.size - 1
     for (idx <- 1 to A) yield
@@ -69,8 +68,8 @@ object HMD {
       idx += 1
     }
 
-    if (countA == 0) 0 //ignore if A and B do not exist
-    else if (idx == end) 1
+    if (countA == 0 && countB == 0) 0 //ignore if A and B do not exist
+    else if (idx == end && countA == countB) 1
     else -1
   }
 
@@ -90,7 +89,8 @@ object HMD {
       if (threshold >= delta) 1
       else -1
     }
-    else 0
+    else if (numA == 0 && numB == 0) 0
+    else -1
   }
 
   def main(args: Array[String]) {
@@ -102,13 +102,13 @@ object HMD {
     //val log = sc.textFile(path + "test.log")
     val N = args(2).toInt
     val log = sc.textFile(path + args(3), N)
-    val m_path = args(4)
+    val job_path = args(4)
     val alpha = args(5).toFloat //the three thresholds
     val beta = args(6).toFloat
-    val gamma = 0.9.toFloat
-    val delta = 0.9.toFloat
+    val gamma = args(7).toFloat
     //val L = log.count()
-    val DEBUG = false
+    val DEBUG = true
+    val m_path = job_path + "dfg.m"
     //println("partition: " + N + " two thresholds: " + alpha + " " + beta)
 
     //read the DFG from master node
@@ -150,21 +150,35 @@ object HMD {
 
     //generate all the possible conditions based on the inverted-list
     val FuzzyArcs = new ListBuffer[(Array[String], Array[String])]()
+    val CONSTRAIN = 3
+
     for (line <- InvertList) {
       val B = line._1.split("\\.")
       val bSet = B.toSet
 
-      //generate all the possibility on line._2
-      val size = line._2.size
-      for (len <- 1 to size) {
-        val r = new Array[String](len)
-        val combinedString = new ListBuffer[String]()
-        genFuzzyArcs(line._2.toArray, len, 0, r, combinedString)
-        for (combine <- combinedString) {
-          val A = combine.split("\\.")
-          val aSet = A.toSet
-          if (aSet.intersect(bSet) == Set.empty) //keep the A and B has no overlap
-            FuzzyArcs += ((A, B))
+      //choose 1 from n, 1->n
+      if (bSet.size > 1 && bSet.size <= CONSTRAIN) {
+        for (a <- line._2 if !bSet.contains(a)) {
+          val A = Array(a)
+          FuzzyArcs += ((A, B))
+        }
+      }
+
+      //choose m from n, n->1
+      if (bSet.size == 1) {
+        //generate all the possibility on line._2
+        //val size = line._2.size
+        val size = CONSTRAIN
+        for (len <- 1 to size) {
+          val r = new Array[String](len)
+          val combinedString = new ListBuffer[String]()
+          genFuzzyArcs(line._2.toArray, len, 0, r, combinedString)
+          for (combine <- combinedString) {
+            val A = combine.split("\\.")
+            val aSet = A.toSet
+            if (aSet.intersect(bSet) == Set.empty) //keep the A and B has no overlap
+              FuzzyArcs += ((A, B))
+          }
         }
       }
     }
@@ -225,70 +239,9 @@ object HMD {
     }
     println("Number of FuzzyArcs in Phase 3: " + FuzzyArcs_3.length)
 
-
-    println("------phase4-------")
-    val Trace2 = tokenActivity.mapPartitions(x => {
-      for (line <- x) yield {
-        val size = line.length - 1
-        var y: Map[String, Int] = Map()
-        for (idx <- 1 to size) {
-          var count = y.getOrElse(line(idx), 0)
-          count += 1
-          y += (line(idx) -> count)
-        }
-        y
-      }
-    })
-
-    val broadCastArcs3 = sc.broadcast(FuzzyArcs_3.map(x => (scala.collection.mutable.Set() ++ x._1, scala.collection.mutable.Set() ++ x._2))) //to mutable set
-    val STAT4 = Trace2.mapPartitions(iter => {
-      val BroFuzzyArcs = broadCastArcs3.value
-      val size = BroFuzzyArcs.length
-      var stat4 = Array.ofDim[Int](size, 2)
-      for (line <- iter) {
-        for (idx <- 0 to size - 1) {
-          val arc = BroFuzzyArcs(idx)
-          val CHECK = check4(line, arc._1, arc._2, delta)
-          if (CHECK == 1) stat4(idx)(0) += 1
-          else if (CHECK == -1) stat4(idx)(1) += 1
-        }
-      }
-      stat4.zipWithIndex.map { case (x, idx) => (idx, (x(0), x(1))) }.iterator
-    })
-    val FuzzyArcs_4 = new ListBuffer[(Array[String], Array[String])]()
-    val LocStat4 = STAT4.collect.groupBy(_._1).mapValues(x => {
-      var hit = 0;
-      var mis = 0;
-      for (tuple <- x) {
-        hit += tuple._2._1
-        mis += tuple._2._2
-      }
-      (hit, mis)
-    })
-
-    val s4 = FuzzyArcs_3.size
-    for (idx <- 0 to s4 - 1) {
-      val statPair = LocStat4.getOrElse(idx, null)
-      if (statPair != null && statPair._1 > 0) {
-        if (statPair._2 < 1) {
-          val arc = FuzzyArcs_3(idx)
-          FuzzyArcs_4 += arc
-          if (DEBUG) {
-            val s = new StringBuilder
-            for (i <- arc._1) s.append(i + ".")
-            s.append("|")
-            for (i <- arc._2) s.append(i + ".")
-            println(s)
-          }
-        }
-      }
-    }
-    println("Number of FuzzyArcs in Phase 4: " + FuzzyArcs_4.length)
-
-
     //remove the precise part from graph
     val g1 = Graph.map(x => (x._1, scala.collection.mutable.Set() ++ x._2))
-    for ((a1, a2) <- FuzzyArcs_4) {
+    for ((a1, a2) <- FuzzyArcs_3) {
       for (x <- a1; y <- a2) {
         //remove (x,y) from Graph
         var tmp = g1.getOrElse(x, null)
@@ -303,7 +256,7 @@ object HMD {
     var withInMap = Map[String, Int]()
     var c1 = 0
     var c2 = 0
-    for (arcs <- FuzzyArcs_4) {
+    for (arcs <- FuzzyArcs_3) {
       for (out <- arcs._1) {
         if (!withOutMap.contains(out)) {
           withOutMap += (out -> c1)
@@ -317,11 +270,11 @@ object HMD {
         }
       }
     }
-    var c3 = FuzzyArcs_4.length
+    var c3 = FuzzyArcs_3.length
     println("number of AndS: " + c1 + " , number of AndJ " + c2 + " ,number of XOR " + c3)
 
     //in the form of [(a,AndS),XOR,(AndJ,a)], ListBuffer[(Array[(String, String)], String, Array[(String, String)])]
-    val ReplaceGW = FuzzyArcs_4.zipWithIndex.map { case (x, idx) =>
+    val ReplaceGW = FuzzyArcs_3.zipWithIndex.map { case (x, idx) =>
       val e1 = x._1.map(y => (y, "AndS" + withOutMap.getOrElse(y, -1)))
       val e2 = "XOR" + idx
       val e3 = x._2.map(z => (("AndJ" + withInMap.getOrElse(z, -1)), z))
@@ -344,7 +297,7 @@ object HMD {
 
     //visualization
     val visual = new Visualization(g1, g2, DFG)
-    visual.dotFile("1.dot")
+    visual.dotFile(job_path + "1.dot")
 
 
     println("------job is done-------")

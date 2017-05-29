@@ -1,0 +1,18 @@
+digraph G { node [style=filled,shape=box];
+edge [color=purple];
+O_Create_Offer -> O_Created[label="42995"];
+edge [color=black];
+O_Sent_mail_and_online -> O_Returned[label="22272"];
+O_Sent_mail_and_online -> O_Cancelled[label="16365"];
+O_Sent_mail_and_online -> O_Refused[label="962"];
+O_Sent_online_only -> O_Returned[label="1033"];
+O_Sent_online_only -> O_Cancelled[label="875"];
+O_Sent_online_only -> O_Refused[label="101"];
+O_Returned -> O_Accepted[label="17228"];
+O_Returned -> O_Cancelled[label="2455"];
+O_Returned -> O_Refused[label="3573"];
+O_Created -> O_Cancelled[label="1203"];
+O_Created -> O_Refused[label="59"];
+O_Created -> O_Sent_online_only[label="2026"];
+O_Created -> O_Sent_mail_and_online[label="39707"];
+}

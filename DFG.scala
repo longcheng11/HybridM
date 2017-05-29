@@ -3,7 +3,7 @@ import java.io._
 import scala.collection.immutable.Map
 
 /**
-  * Created by lcheng on 2/3/2017.
+  * Created by lcheng on 3/17/2017.
   */
 object DFG {
 
@@ -28,7 +28,7 @@ object DFG {
     val N = args(2).toInt
     val log = sc.textFile(path + args(3), N)
     //val m_path = "/home/lcheng/HybridM/dataset/orders/"
-    val m_path = "/home/lcheng/EuroPar_17/"
+    val m_path = args(4);
     //val alpha = args(3).toFloat //the three thresholds
     //val beta = args(4).toFloat
     //val gamma = args(5).toFloat
@@ -83,7 +83,7 @@ object DFG {
       DFG += (b2 -> tmp)
     }*/
 
-    val of = new File(m_path + "order.m")
+    val of = new File(m_path + "dfg.m")
     val bw = new BufferedWriter(new FileWriter(of))
     //edge and vertex
 
