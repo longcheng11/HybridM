@@ -1,5 +1,5 @@
 # HybridM
-Test code for Scalable Discovery of Hybrid Process Models
+Test code for Scalable Discovery of Hybrid Process Models. The relevant paper has been accepted by IEEE Transactions on Services Computing at http://dx.doi.org/10.1109/TSC.2019.2906203
 
 0, The discovered models from BPIC 2017 are in the folder "Models".
 
