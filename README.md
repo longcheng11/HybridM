@@ -38,4 +38,4 @@ Test code for Scalable Discovery of Hybrid Process Models. The relevant paper ha
   
 3, How to set Spark, please refer to http://spark.apache.org/.
 
-4, If any questions, please email to l.cheng(AT)tue.nl
+4, If any questions, please email to long.cheng(AT)ucd.ie
