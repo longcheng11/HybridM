@@ -7,7 +7,7 @@ Test code for Scalable Discovery of Hybrid Process Models. The relevant paper ha
 
 2, With the jar file, the implementation contains two jobs as below:
 
-2.1 The first is to discovery a DFG from logs. An sample of the job submission command is shown as below. Namely, besides the first four system parameters, there are 6 other parameters in our codes. There, "spark://taurusi5033:7077" is the sparkcontext, "hdfs://taurusitaurusi5033:54310/input/" is the file input path over HDFS, "64" is the number of executor cores, "application.tr" is the input event log, which is located in the HDFS at the path "hdfs://taurusi5033:54310/input/".
+2.1 The first is to discovery a DFG from logs. A sample of the job submission command is shown as below. Namely, besides the first four system parameters, there are 6 other parameters in our codes. There, "spark://taurusi5033:7077" is the sparkcontext, "hdfs://taurusitaurusi5033:54310/input/" is the file input path over HDFS, "64" is the number of executor cores, "application.tr" is the input event log, which is located in the HDFS at the path "hdfs://taurusi5033:54310/input/".
 
 > spark-submit \ <br/>
   --class DFG \ <br/>
